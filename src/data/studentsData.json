@@ -1,0 +1,127 @@
+[
+  {
+    "id": "std_1",
+    "name": "ADEMIR BRAZ",
+    "photo": "/students/ademir_braz.jpeg"
+  },
+  {
+    "id": "std_2",
+    "name": "ALEX JUNIOR BAGGIO",
+    "photo": "/students/alex_junior_baggio.png"
+  },
+  {
+    "id": "std_3",
+    "name": "ALEXANDRA REBONATTO",
+    "photo": "/students/alexandra_rebonatto.jpeg"
+  },
+  {
+    "id": "std_4",
+    "name": "AMAURI TOMAZELI",
+    "photo": "/students/amauri_tomazeli.png"
+  },
+  {
+    "id": "std_5",
+    "name": "CESAR AUGUSTO VALDAMERI",
+    "photo": "/students/cesar_augusto_valdameri.jpeg"
+  },
+  {
+    "id": "std_6",
+    "name": "EDERSON RICHARD ANTON",
+    "photo": "/students/ederson_richard_anton.jpeg"
+  },
+  {
+    "id": "std_7",
+    "name": "EDSON LUCAS DE OLIVEIRA",
+    "photo": "/students/edson_lucas_de_oliveira.jpeg"
+  },
+  {
+    "id": "std_8",
+    "name": "FABIO CHAGA",
+    "photo": "/students/fabio_chaga.jpeg"
+  },
+  {
+    "id": "std_9",
+    "name": "GUILHERME RADIN",
+    "photo": "/students/guilherme_radin.jpeg"
+  },
+  {
+    "id": "std_10",
+    "name": "JOSIMAR LORENZON",
+    "photo": "/students/josimar_lorenzon.jpeg"
+  },
+  {
+    "id": "std_11",
+    "name": "JULIANO HENRIQUE KOFF",
+    "photo": "/students/juliano_henrique_koff.jpeg"
+  },
+  {
+    "id": "std_12",
+    "name": "LEILA CARMEM KOTHE",
+    "photo": "/students/leila_carmem_kothe.jpeg"
+  },
+  {
+    "id": "std_13",
+    "name": "LUCAS AMAURY LAUX",
+    "photo": "/students/lucas_amaury_laux.jpeg"
+  },
+  {
+    "id": "std_14",
+    "name": "LUCAS HENRIQUE GALINA ZANATTA",
+    "photo": "/students/lucas_henrique_galina_zanatta.jpeg"
+  },
+  {
+    "id": "std_15",
+    "name": "MARCIO BUSKO",
+    "photo": "/students/marcio_busko.jpeg"
+  },
+  {
+    "id": "std_16",
+    "name": "MARCIO DA ROSA",
+    "photo": "/students/marcio_da_rosa.png"
+  },
+  {
+    "id": "std_17",
+    "name": "MARCOS JOEL BUSANELLO",
+    "photo": "/students/marcos_joel_busanello.jpeg"
+  },
+  {
+    "id": "std_18",
+    "name": "MARIZA VICARI ALESSI",
+    "photo": "/students/mariza_vicari_alessi.jpeg"
+  },
+  {
+    "id": "std_19",
+    "name": "MAURICIO DE MELLO",
+    "photo": "/students/mauricio_de_mello.jpeg"
+  },
+  {
+    "id": "std_20",
+    "name": "RENAN RIBEIRO DE MELLO",
+    "photo": "/students/renan_ribeiro_de_mello.jpeg"
+  },
+  {
+    "id": "std_21",
+    "name": "RENAN VINICIUS GARCIA",
+    "photo": "/students/renan_vinicius_garcia.png"
+  },
+  {
+    "id": "std_22",
+    "name": "RICARDO MOLOSSI PACHECO FERREIRA",
+    "photo": "/students/ricardo_molossi_pacheco_ferreira.jpeg"
+  },
+  {
+    "id": "std_23",
+    "name": "ROGERIO LUIZ FAGUNDES POPPI",
+    "photo": "/students/rogerio_luiz_fagundes_poppi.jpeg"
+  },
+  {
+    "id": "std_24",
+    "name": "WESLEY IVAN TRISSOLDI",
+    "photo": "/students/wesley_ivan_trissoldi.png"
+  },
+  {
+    "id": "std_25",
+    "name": "WILLYAN FABIO DALACORTE",
+    "photo": "/students/willyan_fabio_dalacorte.jpeg"
+  }
+]
