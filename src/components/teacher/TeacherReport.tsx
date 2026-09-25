@@ -71,8 +71,12 @@ export const TeacherReport: React.FC = () => {
         <div className="border-b-2 border-emerald-800 pb-6 mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3.5">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-800 to-teal-900 text-amber-300 font-black text-2xl flex items-center justify-center shadow-md print:border print:border-emerald-800">
-                α
+              <div className="h-14 px-3 bg-white border border-slate-200 rounded-2xl flex items-center justify-center shadow-sm">
+                <img 
+                  src="/logo.png" 
+                  alt="Cooperalfa" 
+                  className="h-10 w-auto object-contain" 
+                />
               </div>
               <div>
                 <span className="text-[11px] font-black uppercase tracking-widest text-emerald-800">

@@ -45,8 +45,12 @@ export const Navbar: React.FC = () => {
               }
             }}
           >
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-emerald-400 to-amber-400 flex items-center justify-center shadow-md shadow-emerald-950/40 text-emerald-950 font-black text-xl tracking-tight">
-              α
+            <div className="h-11 sm:h-12 px-2 bg-white rounded-xl flex items-center justify-center shadow-md shadow-emerald-950/40">
+              <img 
+                src="/logo.png" 
+                alt="Cooperalfa" 
+                className="h-8 sm:h-9 w-auto object-contain"
+              />
             </div>
             <div>
               <div className="flex items-center space-x-2">

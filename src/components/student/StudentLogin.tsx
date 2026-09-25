@@ -214,54 +214,57 @@ export const StudentLogin: React.FC = () => {
             )}
 
             {/* If the current student already submitted on this device */}
-            {existingSubmission && (
-              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-                <div className="text-xs sm:text-sm text-amber-900">
+            {existingSubmission ? (
+              <div className="bg-emerald-50 border border-emerald-300 rounded-2xl p-4 flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-emerald-700 shrink-0 mt-0.5" />
+                <div className="text-xs sm:text-sm text-emerald-950 flex-1">
                   <p className="font-bold">
-                    Você já concluiu uma tentativa desta avaliação.
+                    Avaliação já realizada com sucesso!
                   </p>
-                  <p className="mt-0.5 text-amber-800">
-                    Deseja refazer ou visualizar o seu gabarito comentado?
+                  <p className="mt-0.5 text-emerald-800">
+                    Conforme as diretrizes do PDG Cooperalfa, cada aluno possui direito a <strong>1 (uma) tentativa individual</strong>.
                   </p>
-                  <div className="mt-2 flex gap-2">
+                  <div className="mt-3">
                     <button
                       type="button"
                       onClick={() => {
                         setCurrentStudent(selectedStudent);
                         setCurrentView('student-result');
                       }}
-                      className="px-3 py-1.5 rounded-lg bg-amber-600 text-white font-medium text-xs hover:bg-amber-700 transition-all"
+                      className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5"
                     >
-                      Ver Meu Resultado
+                      <FileCheck2 className="w-4 h-4" />
+                      <span>Visualizar Meu Resultado / Comprovante</span>
                     </button>
                   </div>
                 </div>
               </div>
+            ) : (
+              <>
+                {/* Instructions list */}
+                <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 space-y-2 text-xs text-slate-600">
+                  <p className="font-bold text-slate-700 flex items-center gap-1.5">
+                    <FileCheck2 className="w-4 h-4 text-emerald-600" />
+                    Regras da Avaliação:
+                  </p>
+                  <ul className="list-disc pl-5 space-y-1">
+                    <li><strong>Tentativa Única:</strong> Você tem direito a apenas uma realização desta prova.</li>
+                    <li>15 estudos de caso práticos de balcão e campo.</li>
+                    <li>Você pode navegar e revisar todas as suas respostas antes do envio definitivo.</li>
+                  </ul>
+                </div>
+
+                {/* Submit / Start Button */}
+                <button
+                  type="submit"
+                  disabled={!selectedStudent && !customName.trim()}
+                  className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-base shadow-lg shadow-emerald-700/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all transform active:scale-[0.99]"
+                >
+                  <span>Iniciar Prova (Tentativa Única)</span>
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </>
             )}
-
-            {/* Instructions list */}
-            <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 space-y-2 text-xs text-slate-600">
-              <p className="font-bold text-slate-700 flex items-center gap-1.5">
-                <FileCheck2 className="w-4 h-4 text-emerald-600" />
-                Regras da Prova:
-              </p>
-              <ul className="list-disc pl-5 space-y-1">
-                <li>15 estudos de caso práticos de balcão e lavoura.</li>
-                <li>Você pode revisar e alterar suas respostas antes de finalizar.</li>
-                <li>Ao término, o sistema calcula sua nota e apresenta o gabarito comentado.</li>
-              </ul>
-            </div>
-
-            {/* Submit / Start Button */}
-            <button
-              type="submit"
-              disabled={!selectedStudent && !customName.trim()}
-              className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-base shadow-lg shadow-emerald-700/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all transform active:scale-[0.99]"
-            >
-              <span>{existingSubmission ? 'Refazer Avaliação' : 'Iniciar Prova Agora'}</span>
-              <ChevronRight className="w-5 h-5" />
-            </button>
 
           </form>
         </div>
