@@ -22,6 +22,13 @@ interface ExamContextType {
   lastSubmission: ExamSubmission | null;
   teacherFeedbacks: Record<string, string>;
   
+  // Teacher Authentication
+  isTeacherAuthenticated: boolean;
+  loginTeacher: (password: string) => boolean;
+  logoutTeacher: () => void;
+  isAuthModalOpen: boolean;
+  setIsAuthModalOpen: (open: boolean) => void;
+  
   // Student actions
   startTest: (student: { id?: string; name: string; photo?: string | null }) => void;
   selectAnswer: (questionId: number, option: 'a' | 'b' | 'c' | 'd') => void;
@@ -41,8 +48,12 @@ interface ExamContextType {
 
 const ExamContext = createContext<ExamContextType | undefined>(undefined);
 
-const STORAGE_KEY_SUBMISSIONS = 'cooperalfa_pdg_submissions_v1';
-const STORAGE_KEY_FEEDBACKS = 'cooperalfa_pdg_feedbacks_v1';
+const STORAGE_KEY_SUBMISSIONS = 'cooperalfa_pdg_submissions_v2';
+const STORAGE_KEY_FEEDBACKS = 'cooperalfa_pdg_feedbacks_v2';
+const STORAGE_KEY_AUTH = 'cooperalfa_teacher_auth_v2';
+
+// Master Password for Professor Marcelo Saldanha
+const TEACHER_MASTER_PASSWORDS = ['alfa2026', 'cooperalfa', 'profmarcelo', 'pdg2026', '123456'];
 
 export const ExamProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [currentView, setCurrentView] = useState<AppView>('student-login');
@@ -52,7 +63,17 @@ export const ExamProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
   const [testStartTime, setTestStartTime] = useState<number | null>(null);
   const [lastSubmission, setLastSubmission] = useState<ExamSubmission | null>(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
 
+  const [isTeacherAuthenticated, setIsTeacherAuthenticated] = useState<boolean>(() => {
+    try {
+      return sessionStorage.getItem(STORAGE_KEY_AUTH) === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  // Start with clean initial state (no pre-loaded demo submissions)
   const [submissions, setSubmissions] = useState<Record<string, ExamSubmission>>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_SUBMISSIONS);
@@ -71,12 +92,12 @@ export const ExamProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   });
 
-  // Save to localStorage whenever submissions or feedbacks change
+  // Save to localStorage
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY_SUBMISSIONS, JSON.stringify(submissions));
     } catch (e) {
-      console.error('Failed to save submissions to localStorage', e);
+      console.error('Failed to save submissions', e);
     }
   }, [submissions]);
 
@@ -84,14 +105,14 @@ export const ExamProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       localStorage.setItem(STORAGE_KEY_FEEDBACKS, JSON.stringify(teacherFeedbacks));
     } catch (e) {
-      console.error('Failed to save feedbacks to localStorage', e);
+      console.error('Failed to save feedbacks', e);
     }
   }, [teacherFeedbacks]);
 
   // Sync across tabs via BroadcastChannel if supported
   useEffect(() => {
     if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
-      const channel = new BroadcastChannel('cooperalfa_exam_channel');
+      const channel = new BroadcastChannel('cooperalfa_exam_channel_v2');
       channel.onmessage = (event) => {
         if (event.data?.type === 'SYNC_SUBMISSIONS') {
           setSubmissions(event.data.payload);
@@ -106,13 +127,35 @@ export const ExamProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const broadcastSync = (newSubmissions: Record<string, ExamSubmission>) => {
     if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
       try {
-        const channel = new BroadcastChannel('cooperalfa_exam_channel');
+        const channel = new BroadcastChannel('cooperalfa_exam_channel_v2');
         channel.postMessage({ type: 'SYNC_SUBMISSIONS', payload: newSubmissions });
         channel.close();
       } catch (e) {
         console.error('Broadcast error:', e);
       }
     }
+  };
+
+  const loginTeacher = (password: string): boolean => {
+    const cleanPass = password.trim().toLowerCase();
+    if (TEACHER_MASTER_PASSWORDS.includes(cleanPass)) {
+      setIsTeacherAuthenticated(true);
+      try {
+        sessionStorage.setItem(STORAGE_KEY_AUTH, 'true');
+      } catch {}
+      setIsAuthModalOpen(false);
+      setCurrentView('teacher-dashboard');
+      return true;
+    }
+    return false;
+  };
+
+  const logoutTeacher = () => {
+    setIsTeacherAuthenticated(false);
+    try {
+      sessionStorage.removeItem(STORAGE_KEY_AUTH);
+    } catch {}
+    setCurrentView('student-login');
   };
 
   const startTest = (student: { id?: string; name: string; photo?: string | null }) => {
@@ -222,7 +265,6 @@ export const ExamProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       [studentKey]: feedback
     }));
 
-    // Also update in existing submission if present
     setSubmissions(prev => {
       if (prev[studentKey]) {
         const updated = {
@@ -248,12 +290,11 @@ export const ExamProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
   };
 
-  // Demo generator with realistic PDG Cooperalfa grades & answers
+  // Demo generator only available inside the protected Teacher dashboard
   const loadDemoData = () => {
     const demoSubmissions: Record<string, ExamSubmission> = {};
     const demoFeedbacks: Record<string, string> = {};
 
-    // Calibrated realistic grades for the 25 students (high performers, averages, and a few needing review)
     const scorePresets = [
       15, 14, 14, 13, 15, 12, 11, 14, 13, 10, 15, 14, 12, 13, 14, 11, 13, 15, 14, 12, 13, 14, 12, 14, 15
     ];
@@ -262,7 +303,6 @@ export const ExamProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const targetScore = scorePresets[index % scorePresets.length];
       const answers: Record<number, 'a' | 'b' | 'c' | 'd'> = {};
 
-      // Build answers: make targetScore correct, others plausible wrong answers
       const incorrectOptions: Record<number, ('a' | 'b' | 'c' | 'd')[]> = {
         1: ['a', 'c', 'd'],
         2: ['a', 'c', 'd'],
@@ -281,11 +321,9 @@ export const ExamProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         15: ['a', 'c', 'd']
       };
 
-      // Pick which questions will be wrong
       const wrongCount = 15 - targetScore;
       const wrongQuestionIds = new Set<number>();
       while (wrongQuestionIds.size < wrongCount) {
-        // BATNA (4), Inadimplencia (13) and Conflitos (9) are realistic questions people miss
         const pick = [4, 9, 13, 2, 7, 10, 14][wrongQuestionIds.size % 7] || Math.floor(Math.random() * 15) + 1;
         wrongQuestionIds.add(pick);
       }
@@ -352,7 +390,7 @@ export const ExamProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const exportDataJSON = () => {
     return JSON.stringify({
-      version: 1,
+      version: 2,
       exportedAt: new Date().toISOString(),
       submissions,
       teacherFeedbacks
@@ -390,6 +428,11 @@ export const ExamProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         submissions,
         lastSubmission,
         teacherFeedbacks,
+        isTeacherAuthenticated,
+        loginTeacher,
+        logoutTeacher,
+        isAuthModalOpen,
+        setIsAuthModalOpen,
         startTest,
         selectAnswer,
         toggleFlagQuestion,

@@ -4,15 +4,14 @@ import { STUDENTS_LIST, EXAM_METADATA } from '../../data/examData';
 import { Student } from '../../types';
 import { 
   User, 
-  CheckCircle, 
   BookOpen, 
   Clock, 
   Award, 
   ChevronRight, 
-  Sparkles, 
   Search,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  FileCheck2
 } from 'lucide-react';
 
 export const StudentLogin: React.FC = () => {
@@ -63,21 +62,21 @@ export const StudentLogin: React.FC = () => {
           <div className="relative z-10">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-900/60 border border-emerald-400/30 text-emerald-200 text-xs font-semibold uppercase tracking-wider mb-3">
               <Award className="w-3.5 h-3.5 text-amber-300" />
-              <span>Avaliação Individual PDG</span>
+              <span>Avaliação Individual PDG Cooperalfa</span>
             </div>
 
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white mb-2">
               {EXAM_METADATA.course}
             </h1>
 
-            <p className="text-emerald-100 text-sm sm:text-base font-normal leading-relaxed mb-4">
+            <p className="text-emerald-100 text-xs sm:text-sm font-normal leading-relaxed mb-4">
               {EXAM_METADATA.program}
             </p>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-3 border-t border-emerald-600/50 text-xs sm:text-sm">
               <div className="flex items-center gap-2 text-emerald-100">
                 <BookOpen className="w-4 h-4 text-amber-300 shrink-0" />
-                <span><strong>15</strong> Questões</span>
+                <span><strong>15</strong> Questões Práticas</span>
               </div>
               <div className="flex items-center gap-2 text-emerald-100">
                 <Clock className="w-4 h-4 text-amber-300 shrink-0" />
@@ -99,7 +98,7 @@ export const StudentLogin: React.FC = () => {
               Identificação do(a) Aluno(a)
             </h2>
             <p className="text-slate-500 text-xs sm:text-sm mt-1">
-              Selecione seu nome na lista da turma ou digite seu nome completo para iniciar.
+              Localize seu nome abaixo para iniciar a sua prova individual.
             </p>
           </div>
 
@@ -108,14 +107,14 @@ export const StudentLogin: React.FC = () => {
             {/* Search / Select Student */}
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-2">
-                Buscar Aluno na Turma Cooperalfa:
+                Selecione ou busque seu nome:
               </label>
 
               <div className="relative">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder="Digite seu nome para filtrar a lista..."
+                  placeholder="Digite para filtrar seu nome..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all"
@@ -141,7 +140,6 @@ export const StudentLogin: React.FC = () => {
                 ) : (
                   filteredStudents.map((student) => {
                     const isSelected = selectedStudent?.id === student.id;
-                    const studentSubmission = submissions[student.name];
 
                     return (
                       <div
@@ -177,18 +175,9 @@ export const StudentLogin: React.FC = () => {
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
-                          {studentSubmission && (
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                              isSelected ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800'
-                            }`}>
-                              Nota: {studentSubmission.grade.toFixed(1)}
-                            </span>
-                          )}
-                          {isSelected && (
-                            <CheckCircle2 className="w-5 h-5 text-white" />
-                          )}
-                        </div>
+                        {isSelected && (
+                          <CheckCircle2 className="w-5 h-5 text-white shrink-0 ml-2" />
+                        )}
                       </div>
                     );
                   })
@@ -196,17 +185,17 @@ export const StudentLogin: React.FC = () => {
               </div>
             </div>
 
-            {/* Selected Student Display / Confirmation */}
+            {/* Selected Student Confirmation Display */}
             {selectedStudent && (
               <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-center gap-4 animate-in fade-in duration-200">
                 {selectedStudent.photo ? (
                   <img
                     src={selectedStudent.photo}
                     alt={selectedStudent.name}
-                    className="w-14 h-14 rounded-2xl object-cover border-2 border-emerald-500 shadow-md"
+                    className="w-14 h-14 rounded-2xl object-cover border-2 border-emerald-500 shadow-md shrink-0"
                   />
                 ) : (
-                  <div className="w-14 h-14 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-black text-lg">
+                  <div className="w-14 h-14 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-black text-lg shrink-0">
                     {selectedStudent.name.slice(0, 2)}
                   </div>
                 )}
@@ -217,23 +206,23 @@ export const StudentLogin: React.FC = () => {
                   <h3 className="font-bold text-slate-800 text-sm sm:text-base mt-0.5">
                     {selectedStudent.name}
                   </h3>
-                  <p className="text-xs text-emerald-700">
-                    Pronto para responder às 15 questões de caso prático
+                  <p className="text-xs text-emerald-700 font-medium">
+                    Clique abaixo para iniciar sua avaliação individual
                   </p>
                 </div>
               </div>
             )}
 
-            {/* Existing Submission Alert */}
+            {/* If the current student already submitted on this device */}
             {existingSubmission && (
               <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
                 <div className="text-xs sm:text-sm text-amber-900">
                   <p className="font-bold">
-                    Você já realizou esta prova anteriormente!
+                    Você já concluiu uma tentativa desta avaliação.
                   </p>
                   <p className="mt-0.5 text-amber-800">
-                    Sua pontuação registrada foi <strong>{existingSubmission.score}/15 ({existingSubmission.percentage}%) — Nota {existingSubmission.grade.toFixed(1)}</strong>.
+                    Deseja refazer ou visualizar o seu gabarito comentado?
                   </p>
                   <div className="mt-2 flex gap-2">
                     <button
@@ -242,9 +231,9 @@ export const StudentLogin: React.FC = () => {
                         setCurrentStudent(selectedStudent);
                         setCurrentView('student-result');
                       }}
-                      className="px-3 py-1 rounded-lg bg-amber-600 text-white font-medium text-xs hover:bg-amber-700 transition-all"
+                      className="px-3 py-1.5 rounded-lg bg-amber-600 text-white font-medium text-xs hover:bg-amber-700 transition-all"
                     >
-                      Ver Gabarito & Resultado
+                      Ver Meu Resultado
                     </button>
                   </div>
                 </div>
@@ -254,13 +243,13 @@ export const StudentLogin: React.FC = () => {
             {/* Instructions list */}
             <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 space-y-2 text-xs text-slate-600">
               <p className="font-bold text-slate-700 flex items-center gap-1.5">
-                <CheckCircle className="w-4 h-4 text-emerald-600" />
-                Instruções Importantes:
+                <FileCheck2 className="w-4 h-4 text-emerald-600" />
+                Regras da Prova:
               </p>
               <ul className="list-disc pl-5 space-y-1">
-                <li>A prova é composta por 15 estudos de caso práticos de campo e balcão.</li>
-                <li>Você pode navegar livremente entre as questões e revisar suas respostas antes de enviar.</li>
-                <li>Ao finalizar, seu resultado e gabarito comentado serão gerados imediatamente.</li>
+                <li>15 estudos de caso práticos de balcão e lavoura.</li>
+                <li>Você pode revisar e alterar suas respostas antes de finalizar.</li>
+                <li>Ao término, o sistema calcula sua nota e apresenta o gabarito comentado.</li>
               </ul>
             </div>
 
@@ -270,7 +259,7 @@ export const StudentLogin: React.FC = () => {
               disabled={!selectedStudent && !customName.trim()}
               className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-base shadow-lg shadow-emerald-700/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all transform active:scale-[0.99]"
             >
-              <span>{existingSubmission ? 'Fazer Prova Novamente' : 'Iniciar Prova Agora'}</span>
+              <span>{existingSubmission ? 'Refazer Avaliação' : 'Iniciar Prova Agora'}</span>
               <ChevronRight className="w-5 h-5" />
             </button>
 
@@ -279,7 +268,7 @@ export const StudentLogin: React.FC = () => {
 
         {/* Footer note */}
         <p className="text-center text-xs text-slate-400 mt-6 font-medium">
-          Cooperalfa © {new Date().getFullYear()} — Programa de Desenvolvimento Gerencial
+          Cooperalfa © {new Date().getFullYear()} — Programa de Desenvolvimento Gerencial (PDG)
         </p>
 
       </div>

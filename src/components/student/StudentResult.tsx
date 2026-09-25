@@ -237,11 +237,11 @@ export const StudentResult: React.FC = () => {
             </button>
 
             <button
-              onClick={() => setCurrentView('teacher-dashboard')}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-md transition-all ml-auto"
+              onClick={() => setCurrentView('student-login')}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-md transition-all ml-auto"
             >
-              <ShieldCheck className="w-4 h-4 text-amber-400" />
-              <span>Acessar Painel do Professor</span>
+              <FileCheck className="w-4 h-4 text-emerald-400" />
+              <span>Concluir e Voltar ao Início</span>
             </button>
           </div>
 
