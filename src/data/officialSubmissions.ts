@@ -301,5 +301,20 @@ export const OFFICIAL_REAL_SUBMISSIONS: Record<string, ExamSubmission> = {
     timeSpentSeconds: 1680,
     teacherFeedback: "Excelente desempenho gerencial! Demonstrou pleno domínio dos conceitos do Método de Harvard e do modelo cooperativista, com visão estratégica e foco em relacionamentos de longo prazo.",
     status: "concluido"
+  },
+  "CESAR AUGUSTO VALDAMERI": {
+    id: "sub_std_5_official",
+    studentId: "std_5",
+    studentName: "CESAR AUGUSTO VALDAMERI",
+    studentPhoto: "/students/cesar_augusto_valdameri.jpeg",
+    startedAt: "2026-09-26T11:00:00.000Z",
+    completedAt: "2026-09-26T11:27:00.000Z",
+    answers: { 1: 'b', 2: 'b', 3: 'c', 4: 'b', 5: 'b', 6: 'b', 7: 'b', 8: 'c', 9: 'c', 10: 'b', 11: 'a', 12: 'b', 13: 'b', 14: 'b', 15: 'b' },
+    score: 15,
+    percentage: 100,
+    grade: 10.0,
+    timeSpentSeconds: 1580,
+    teacherFeedback: "Excelente desempenho gerencial! Demonstrou pleno domínio dos conceitos do Método de Harvard e do modelo cooperativista, com visão estratégica e foco em relacionamentos de longo prazo.",
+    status: "concluido"
   }
 };

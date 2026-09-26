@@ -50,9 +50,9 @@ const ExamContext = createContext<ExamContextType | undefined>(undefined);
 
 import { OFFICIAL_REAL_SUBMISSIONS } from '../data/officialSubmissions';
 
-const STORAGE_KEY_SUBMISSIONS = 'cooperalfa_pdg_submissions_v3';
-const STORAGE_KEY_FEEDBACKS = 'cooperalfa_pdg_feedbacks_v3';
-const STORAGE_KEY_AUTH = 'cooperalfa_teacher_auth_v3';
+const STORAGE_KEY_SUBMISSIONS = 'cooperalfa_pdg_submissions_v4';
+const STORAGE_KEY_FEEDBACKS = 'cooperalfa_pdg_feedbacks_v4';
+const STORAGE_KEY_AUTH = 'cooperalfa_teacher_auth_v4';
 
 // Master Password for Professor Marcelo Saldanha
 const TEACHER_MASTER_PASSWORDS = ['alfa2026', 'cooperalfa', 'profmarcelo', 'pdg2026', '123456'];
