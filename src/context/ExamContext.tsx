@@ -48,9 +48,11 @@ interface ExamContextType {
 
 const ExamContext = createContext<ExamContextType | undefined>(undefined);
 
-const STORAGE_KEY_SUBMISSIONS = 'cooperalfa_pdg_submissions_v2';
-const STORAGE_KEY_FEEDBACKS = 'cooperalfa_pdg_feedbacks_v2';
-const STORAGE_KEY_AUTH = 'cooperalfa_teacher_auth_v2';
+import { OFFICIAL_REAL_SUBMISSIONS } from '../data/officialSubmissions';
+
+const STORAGE_KEY_SUBMISSIONS = 'cooperalfa_pdg_submissions_v3';
+const STORAGE_KEY_FEEDBACKS = 'cooperalfa_pdg_feedbacks_v3';
+const STORAGE_KEY_AUTH = 'cooperalfa_teacher_auth_v3';
 
 // Master Password for Professor Marcelo Saldanha
 const TEACHER_MASTER_PASSWORDS = ['alfa2026', 'cooperalfa', 'profmarcelo', 'pdg2026', '123456'];
@@ -73,22 +75,30 @@ export const ExamProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   });
 
-  // Start with clean initial state (no pre-loaded demo submissions)
+  // Start with official real submissions consolidated from PDFs
   const [submissions, setSubmissions] = useState<Record<string, ExamSubmission>>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_SUBMISSIONS);
-      return saved ? JSON.parse(saved) : {};
+      const parsed = saved ? JSON.parse(saved) : {};
+      return { ...OFFICIAL_REAL_SUBMISSIONS, ...parsed };
     } catch {
-      return {};
+      return OFFICIAL_REAL_SUBMISSIONS;
     }
   });
 
   const [teacherFeedbacks, setTeacherFeedbacks] = useState<Record<string, string>>(() => {
+    const initialFeedbacks: Record<string, string> = {};
+    Object.values(OFFICIAL_REAL_SUBMISSIONS).forEach(sub => {
+      if (sub.teacherFeedback) {
+        initialFeedbacks[sub.studentName] = sub.teacherFeedback;
+      }
+    });
     try {
       const saved = localStorage.getItem(STORAGE_KEY_FEEDBACKS);
-      return saved ? JSON.parse(saved) : {};
+      const parsed = saved ? JSON.parse(saved) : {};
+      return { ...initialFeedbacks, ...parsed };
     } catch {
-      return {};
+      return initialFeedbacks;
     }
   });
 
