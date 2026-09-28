@@ -146,7 +146,7 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
             </div>
 
             <textarea
-              rows={3}
+              rows={6}
               value={feedbackText}
               onChange={(e) => setFeedbackText(e.target.value)}
               placeholder="Digite um feedback personalizado sobre o desempenho do aluno neste módulo do PDG..."

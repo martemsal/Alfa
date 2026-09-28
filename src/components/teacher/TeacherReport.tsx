@@ -1,6 +1,7 @@
 import React from 'react';
 import { useExam } from '../../context/ExamContext';
 import { STUDENTS_LIST, QUESTIONS, EXAM_METADATA, CATEGORIES } from '../../data/examData';
+import { DEFAULT_PENDING_FEEDBACKS } from '../../data/officialSubmissions';
 import { 
   Printer, 
   ChevronLeft, 
@@ -218,11 +219,11 @@ export const TeacherReport: React.FC = () => {
               <tbody className="divide-y divide-slate-200">
                 {STUDENTS_LIST.map((student, idx) => {
                   const sub = submissions[student.name];
-                  const feedback = sub?.teacherFeedback || teacherFeedbacks[student.name] || 'Participação ativa no módulo; bom domínio dos conceitos de balcão.';
+                  const feedback = sub?.teacherFeedback || teacherFeedbacks[student.name] || DEFAULT_PENDING_FEEDBACKS[student.name] || 'Participação ativa no módulo; bom domínio dos conceitos de balcão.';
 
                   return (
                     <tr key={student.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/70'}>
-                      <td className="py-2.5 px-3 text-center">
+                      <td className="py-2.5 px-3 text-center align-top">
                         {student.photo ? (
                           <img
                             src={student.photo}
@@ -236,15 +237,15 @@ export const TeacherReport: React.FC = () => {
                         )}
                       </td>
 
-                      <td className="py-2.5 px-3 font-bold text-slate-900">
+                      <td className="py-2.5 px-3 font-bold text-slate-900 align-top">
                         {student.name}
                       </td>
 
-                      <td className="py-2.5 px-3 text-center text-slate-700 font-semibold">
+                      <td className="py-2.5 px-3 text-center text-slate-700 font-semibold align-top">
                         {sub ? `${sub.score}/15` : 'Pendente'}
                       </td>
 
-                      <td className="py-2.5 px-3 text-center">
+                      <td className="py-2.5 px-3 text-center align-top">
                         {sub ? (
                           <span className={`font-black text-xs px-2 py-0.5 rounded ${
                             sub.grade >= 8.5
@@ -260,8 +261,8 @@ export const TeacherReport: React.FC = () => {
                         )}
                       </td>
 
-                      <td className="py-2.5 px-3 text-slate-700 italic text-[11px] leading-snug">
-                        "{feedback}"
+                      <td className="py-2.5 px-3 text-slate-700 text-[11px] leading-relaxed whitespace-pre-line align-top">
+                        {feedback}
                       </td>
                     </tr>
                   );
@@ -271,17 +272,32 @@ export const TeacherReport: React.FC = () => {
           </div>
         </div>
 
-        {/* Section 4: Pedagogical Recommendations */}
-        <div className="mb-10 bg-slate-50 rounded-2xl p-5 border border-slate-200 text-xs text-slate-700 space-y-2">
-          <h3 className="font-bold uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
+        {/* Section 4: Institutional Guidelines & Recommendations */}
+        <div className="mb-10 bg-slate-50 rounded-2xl p-5 border border-slate-200 text-xs text-slate-700 space-y-3">
+          <h3 className="font-bold uppercase tracking-wider text-slate-900 flex items-center gap-1.5 text-sm">
             <FileCheck className="w-4 h-4 text-emerald-700" />
-            4. Recomendações Pedagógicas para as Próximas Etapas:
+            4. Diretrizes Institucionais e Recomendações Finais para a Rede Alfa
           </h3>
-          <ul className="list-disc pl-5 space-y-1">
-            <li>Recomenda-se reforçar nas reuniões de filial a distinção prática entre <strong>Posições</strong> (ex: pedido inflexível de desconto) e <strong>Interesses</strong> (alívio de fluxo de caixa e segurança de colheita).</li>
-            <li>Incentivar a ancoragem das negociações no ecossistema integrado Cooperalfa (assistência técnica agronômica, recebimento de grãos e distribuição de sobras) como principal antídoto à guerra predatória de preços.</li>
-            <li>Manter acompanhamento individualizado com foco em escuta ativa empática para produtores de perfil relacional e argumentos analíticos de ROI para produtores tecnificados.</li>
-          </ul>
+          <div className="space-y-3 pt-1">
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs">
+              <h4 className="font-bold text-emerald-900 mb-1 text-xs">Institucionalização da Abordagem Consultiva:</h4>
+              <p className="text-slate-700 leading-relaxed text-[11px]">
+                As lideranças das filiais devem disseminar junto aos balconistas e agrônomos de campo a prática de investigação ativa de interesses antes de qualquer cotação. O antídoto contra a perda de clientes para multinacionais consiste na valorização do ciclo integrado: fornecimento seguro de insumos, assistência técnica presencial na lavoura, garantia de recebimento nos armazéns Alfa e retorno das sobras de exercício.
+              </p>
+            </div>
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs">
+              <h4 className="font-bold text-emerald-900 mb-1 text-xs">Mitigação Preventiva de Inadimplência:</h4>
+              <p className="text-slate-700 leading-relaxed text-[11px]">
+                Incentivar que todas as operações a prazo safra sejam lastreadas em instrumentos de mercado formais (Cédulas de Produto Rural - CPR, Barter físico e alienação fiduciária). Em anos de adversidade climática, a renegociação deve focar na liquidação com estoques de grãos já depositados e na rolagem assistida, assegurando que o cooperado continue na atividade sem onerar o balanço da filial.
+              </p>
+            </div>
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs">
+              <h4 className="font-bold text-emerald-900 mb-1 text-xs">Fortalecimento da Comunicação Assertiva:</h4>
+              <p className="text-slate-700 leading-relaxed text-[11px]">
+                Eliminar abordagens informais artificiais ou posturas defensivas. O cooperado deve ser tratado como sócio e coproprietário da cooperativa, exigindo transparência de dados, planejamento agronômico e cumprimento rigoroso da palavra empenhada.
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Signature Block */}

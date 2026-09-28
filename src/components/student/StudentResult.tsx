@@ -193,8 +193,8 @@ export const StudentResult: React.FC = () => {
                 <Award className="w-4 h-4 text-amber-600" />
                 <span>Parecer Pedagógico do Docente ({EXAM_METADATA.professor}):</span>
               </div>
-              <p className="text-slate-800 text-xs sm:text-sm italic leading-relaxed">
-                "{submission.teacherFeedback}"
+              <p className="text-slate-800 text-xs sm:text-sm leading-relaxed whitespace-pre-line font-normal">
+                {submission.teacherFeedback}
               </p>
             </div>
           )}
