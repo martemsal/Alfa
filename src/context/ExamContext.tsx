@@ -44,6 +44,13 @@ interface ExamContextType {
   deleteSubmission: (studentKey: string) => void;
   exportDataJSON: () => string;
   importDataJSON: (jsonStr: string) => boolean;
+
+  // Student roster management
+  students: Student[];
+  excludedStudents: Student[];
+  excludeStudent: (studentName: string) => void;
+  restoreStudent: (studentName: string) => void;
+  restoreOfficialData: () => void;
 }
 
 const ExamContext = createContext<ExamContextType | undefined>(undefined);
@@ -53,6 +60,7 @@ import { OFFICIAL_REAL_SUBMISSIONS } from '../data/officialSubmissions';
 const STORAGE_KEY_SUBMISSIONS = 'cooperalfa_pdg_submissions_v5';
 const STORAGE_KEY_FEEDBACKS = 'cooperalfa_pdg_feedbacks_v5';
 const STORAGE_KEY_AUTH = 'cooperalfa_teacher_auth_v5';
+const STORAGE_KEY_EXCLUDED = 'cooperalfa_pdg_excluded_students_v5';
 
 // Master Password for Professor Marcelo Saldanha
 const TEACHER_MASTER_PASSWORDS = ['alfa2026', 'cooperalfa', 'profmarcelo', 'pdg2026', '123456'];
@@ -102,6 +110,20 @@ export const ExamProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   });
 
+  // Track students who no longer attend the course / dropped out
+  const [excludedNames, setExcludedNames] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_EXCLUDED);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // Derived student lists
+  const students = STUDENTS_LIST.filter(s => !excludedNames.includes(s.name));
+  const excludedStudents = STUDENTS_LIST.filter(s => excludedNames.includes(s.name));
+
   // Save to localStorage
   useEffect(() => {
     try {
@@ -119,6 +141,14 @@ export const ExamProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, [teacherFeedbacks]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_EXCLUDED, JSON.stringify(excludedNames));
+    } catch (e) {
+      console.error('Failed to save excluded students', e);
+    }
+  }, [excludedNames]);
+
   // Sync across tabs via BroadcastChannel if supported
   useEffect(() => {
     if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
@@ -126,6 +156,10 @@ export const ExamProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       channel.onmessage = (event) => {
         if (event.data?.type === 'SYNC_SUBMISSIONS') {
           setSubmissions(event.data.payload);
+        } else if (event.data?.type === 'SYNC_EXCLUDED') {
+          setExcludedNames(event.data.payload);
+        } else if (event.data?.type === 'SYNC_FEEDBACKS') {
+          setTeacherFeedbacks(event.data.payload);
         }
       };
       return () => {
@@ -300,6 +334,70 @@ export const ExamProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
   };
 
+  const excludeStudent = (studentName: string) => {
+    setExcludedNames(prev => {
+      const updated = prev.includes(studentName) ? prev : [...prev, studentName];
+      if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+        try {
+          const channel = new BroadcastChannel('cooperalfa_exam_channel_v2');
+          channel.postMessage({ type: 'SYNC_EXCLUDED', payload: updated });
+          channel.close();
+        } catch {}
+      }
+      return updated;
+    });
+
+    setSubmissions(prev => {
+      const updated = { ...prev };
+      delete updated[studentName];
+      broadcastSync(updated);
+      return updated;
+    });
+  };
+
+  const restoreStudent = (studentName: string) => {
+    setExcludedNames(prev => {
+      const updated = prev.filter(name => name !== studentName);
+      if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+        try {
+          const channel = new BroadcastChannel('cooperalfa_exam_channel_v2');
+          channel.postMessage({ type: 'SYNC_EXCLUDED', payload: updated });
+          channel.close();
+        } catch {}
+      }
+      return updated;
+    });
+
+    if (OFFICIAL_REAL_SUBMISSIONS[studentName]) {
+      setSubmissions(prev => {
+        const updated = {
+          ...prev,
+          [studentName]: OFFICIAL_REAL_SUBMISSIONS[studentName]
+        };
+        broadcastSync(updated);
+        return updated;
+      });
+    }
+  };
+
+  const restoreOfficialData = () => {
+    setSubmissions(OFFICIAL_REAL_SUBMISSIONS);
+    const initialFeedbacks: Record<string, string> = {};
+    Object.values(OFFICIAL_REAL_SUBMISSIONS).forEach(sub => {
+      if (sub.teacherFeedback) {
+        initialFeedbacks[sub.studentName] = sub.teacherFeedback;
+      }
+    });
+    setTeacherFeedbacks(initialFeedbacks);
+    setExcludedNames([]);
+    try {
+      localStorage.setItem(STORAGE_KEY_SUBMISSIONS, JSON.stringify(OFFICIAL_REAL_SUBMISSIONS));
+      localStorage.setItem(STORAGE_KEY_FEEDBACKS, JSON.stringify(initialFeedbacks));
+      localStorage.setItem(STORAGE_KEY_EXCLUDED, JSON.stringify([]));
+    } catch {}
+    broadcastSync(OFFICIAL_REAL_SUBMISSIONS);
+  };
+
   // Demo generator only available inside the protected Teacher dashboard
   const loadDemoData = () => {
     const demoSubmissions: Record<string, ExamSubmission> = {};
@@ -387,6 +485,7 @@ export const ExamProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const resetAllData = () => {
     setSubmissions({});
     setTeacherFeedbacks({});
+    setExcludedNames([]);
     setActiveAnswers({});
     setFlaggedQuestions([]);
     setCurrentStudent(null);
@@ -394,16 +493,18 @@ export const ExamProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       localStorage.removeItem(STORAGE_KEY_SUBMISSIONS);
       localStorage.removeItem(STORAGE_KEY_FEEDBACKS);
+      localStorage.removeItem(STORAGE_KEY_EXCLUDED);
     } catch {}
     broadcastSync({});
   };
 
   const exportDataJSON = () => {
     return JSON.stringify({
-      version: 2,
+      version: 3,
       exportedAt: new Date().toISOString(),
       submissions,
-      teacherFeedbacks
+      teacherFeedbacks,
+      excludedNames
     }, null, 2);
   };
 
@@ -415,6 +516,9 @@ export const ExamProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
       if (parsed.teacherFeedbacks) {
         setTeacherFeedbacks(parsed.teacherFeedbacks);
+      }
+      if (parsed.excludedNames) {
+        setExcludedNames(parsed.excludedNames);
       }
       broadcastSync(parsed.submissions || {});
       return true;
@@ -454,7 +558,12 @@ export const ExamProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         resetAllData,
         deleteSubmission,
         exportDataJSON,
-        importDataJSON
+        importDataJSON,
+        students,
+        excludedStudents,
+        excludeStudent,
+        restoreStudent,
+        restoreOfficialData
       }}
     >
       {children}

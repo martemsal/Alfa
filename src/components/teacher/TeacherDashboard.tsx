@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useExam } from '../../context/ExamContext';
-import { STUDENTS_LIST, QUESTIONS, EXAM_METADATA, CATEGORIES } from '../../data/examData';
+import { QUESTIONS, EXAM_METADATA, CATEGORIES } from '../../data/examData';
+import { DEFAULT_PENDING_FEEDBACKS } from '../../data/officialSubmissions';
 import { Student } from '../../types';
 import { StudentDetailModal } from './StudentDetailModal';
 import { 
@@ -24,7 +25,14 @@ import {
   MessageSquare,
   ChevronRight,
   ShieldCheck,
-  CheckCircle2
+  CheckCircle2,
+  Edit3,
+  UserX,
+  UserCheck,
+  AlertTriangle,
+  Save,
+  Check,
+  X
 } from 'lucide-react';
 
 export const TeacherDashboard: React.FC = () => {
@@ -35,7 +43,13 @@ export const TeacherDashboard: React.FC = () => {
     resetAllData,
     exportDataJSON,
     importDataJSON,
-    setCurrentView
+    setCurrentView,
+    students,
+    excludedStudents,
+    excludeStudent,
+    restoreStudent,
+    updateTeacherFeedback,
+    restoreOfficialData
   } = useExam();
 
   const [activeTab, setActiveTab] = useState<'mirror' | 'analytics'>('mirror');
@@ -44,11 +58,47 @@ export const TeacherDashboard: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<'all' | 'completed' | 'pending' | 'high' | 'low'>('all');
   const [selectedStudentForModal, setSelectedStudentForModal] = useState<Student | null>(null);
 
+  // Quick Feedback Editing Modal State
+  const [editingFeedbackStudent, setEditingFeedbackStudent] = useState<Student | null>(null);
+  const [feedbackEditText, setFeedbackEditText] = useState('');
+  const [feedbackSavedNotice, setFeedbackSavedNotice] = useState(false);
+
+  // Student Exclusion Confirmation Modal State
+  const [studentToExclude, setStudentToExclude] = useState<Student | null>(null);
+
+  // Excluded students list visibility
+  const [showExcludedSection, setShowExcludedSection] = useState(false);
+
+  const handleOpenFeedbackEdit = (student: Student) => {
+    const current = submissions[student.name]?.teacherFeedback || teacherFeedbacks[student.name] || DEFAULT_PENDING_FEEDBACKS[student.name] || '';
+    setFeedbackEditText(current);
+    setEditingFeedbackStudent(student);
+  };
+
+  const handleSaveQuickFeedback = () => {
+    if (editingFeedbackStudent) {
+      updateTeacherFeedback(editingFeedbackStudent.name, feedbackEditText);
+      setFeedbackSavedNotice(true);
+      setTimeout(() => {
+        setFeedbackSavedNotice(false);
+        setEditingFeedbackStudent(null);
+      }, 900);
+    }
+  };
+
+  const handleConfirmExclude = () => {
+    if (studentToExclude) {
+      excludeStudent(studentToExclude.name);
+      setStudentToExclude(null);
+    }
+  };
+
   // Aggregated Stats
-  const totalStudents = STUDENTS_LIST.length;
+  const totalStudents = students.length;
+  const activeStudentNames = useMemo(() => new Set(students.map(s => s.name)), [students]);
   const completedList = useMemo(() => {
-    return Object.values(submissions).filter(s => s.status === 'concluido');
-  }, [submissions]);
+    return Object.values(submissions).filter(s => s.status === 'concluido' && activeStudentNames.has(s.studentName));
+  }, [submissions, activeStudentNames]);
 
   const completedCount = completedList.length;
   const pendingCount = totalStudents - completedCount;
@@ -103,7 +153,7 @@ export const TeacherDashboard: React.FC = () => {
 
   // Filtered Students List
   const filteredStudents = useMemo(() => {
-    return STUDENTS_LIST.filter(student => {
+    return students.filter(student => {
       const sub = submissions[student.name];
       const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase().trim());
       if (!matchesSearch) return false;
@@ -114,7 +164,7 @@ export const TeacherDashboard: React.FC = () => {
       if (filterStatus === 'low') return !!sub && sub.grade < 7.0;
       return true;
     });
-  }, [searchTerm, filterStatus, submissions]);
+  }, [students, searchTerm, filterStatus, submissions]);
 
   const handleExport = () => {
     const jsonStr = exportDataJSON();
@@ -206,6 +256,18 @@ export const TeacherDashboard: React.FC = () => {
                 >
                   <Upload className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">Importar</span>
+                </button>
+                <button
+                  onClick={() => {
+                    if (confirm("Deseja restaurar os dados e pareceres oficiais consolidados da turma?")) {
+                      restoreOfficialData();
+                    }
+                  }}
+                  title="Restaurar dados oficiais da turma"
+                  className="p-2 text-emerald-700 hover:text-emerald-900 rounded-lg hover:bg-white transition-all text-xs font-semibold flex items-center gap-1"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Restaurar Original</span>
                 </button>
                 <button
                   onClick={() => {
@@ -313,7 +375,7 @@ export const TeacherDashboard: React.FC = () => {
               }`}
             >
               <Users className="w-4 h-4" />
-              <span>Espelho da Turma ({STUDENTS_LIST.length} Alunos)</span>
+              <span>Espelho da Turma ({students.length} Alunos)</span>
             </button>
 
             <button
@@ -374,7 +436,7 @@ export const TeacherDashboard: React.FC = () => {
                 </span>
                 
                 {[
-                  { key: 'all', label: `Todos (${STUDENTS_LIST.length})` },
+                  { key: 'all', label: `Todos (${students.length})` },
                   { key: 'completed', label: `Feitas (${completedCount})` },
                   { key: 'pending', label: `Pendentes (${pendingCount})` },
                   { key: 'high', label: 'Destaque (≥ 8.5)' },
@@ -395,6 +457,78 @@ export const TeacherDashboard: React.FC = () => {
               </div>
 
             </div>
+
+            {/* Excluded Students Banner & Restoration Panel */}
+            {excludedStudents.length > 0 && (
+              <div className="bg-rose-50/80 border border-rose-200 rounded-2xl p-4 shadow-xs transition-all">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                  <div className="flex items-center gap-2.5 text-rose-950">
+                    <div className="w-8 h-8 rounded-xl bg-rose-100 flex items-center justify-center shrink-0">
+                      <UserX className="w-4 h-4 text-rose-600" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-xs sm:text-sm">
+                        {excludedStudents.length} aluno(s) excluído(s) da turma (desistentes / não comparecem mais)
+                      </p>
+                      <p className="text-[11px] text-rose-700">
+                        Removidos do espelho de notas, da contagem oficial e dos relatórios da coordenação.
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowExcludedSection(!showExcludedSection)}
+                    className="self-start sm:self-center px-3 py-1.5 bg-white hover:bg-rose-100 text-rose-800 text-xs font-bold rounded-xl border border-rose-300 shadow-2xs transition-all"
+                  >
+                    {showExcludedSection ? 'Ocultar Lista' : `Ver / Restaurar (${excludedStudents.length})`}
+                  </button>
+                </div>
+
+                {showExcludedSection && (
+                  <div className="mt-3 pt-3 border-t border-rose-200/80 space-y-2">
+                    {excludedStudents.map(student => (
+                      <div
+                        key={student.id}
+                        className="bg-white p-3 rounded-xl border border-rose-200 flex items-center justify-between gap-3 shadow-2xs"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          {student.photo ? (
+                            <img
+                              src={student.photo}
+                              alt={student.name}
+                              className="w-9 h-9 rounded-lg object-cover grayscale opacity-75 shrink-0"
+                            />
+                          ) : (
+                            <div className="w-9 h-9 rounded-lg bg-slate-300 text-slate-600 font-bold text-xs flex items-center justify-center shrink-0">
+                              {student.name.slice(0, 2)}
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <p className="font-bold text-xs text-slate-800 truncate line-through decoration-rose-500">
+                              {student.name}
+                            </p>
+                            <span className="text-[10px] text-rose-600 font-medium">
+                              Desistente / Excluído da turma
+                            </span>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => restoreStudent(student.name)}
+                          className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all shadow-2xs shrink-0"
+                          title="Restaurar este aluno para a turma ativa"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5 text-emerald-700" />
+                          <span>Restaurar Aluno</span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* GRID VIEW */}
             {viewMode === 'grid' && (
@@ -461,32 +595,54 @@ export const TeacherDashboard: React.FC = () => {
 
                         {/* Feedback summary snippet */}
                         {feedback ? (
-                          <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/80 mb-3 text-[11px] text-slate-700 line-clamp-2 italic">
-                            "{feedback}"
+                          <div
+                            onClick={() => handleOpenFeedbackEdit(student)}
+                            className="bg-slate-50 hover:bg-emerald-50/50 cursor-pointer p-2.5 rounded-xl border border-slate-200/80 mb-3 text-[11px] text-slate-700 transition-all group"
+                            title="Clique para editar parecer"
+                          >
+                            <span className="line-clamp-2 italic">"{feedback}"</span>
+                            <span className="text-[10px] text-emerald-700 font-semibold not-italic flex items-center gap-1 mt-1 group-hover:underline">
+                              <Edit3 className="w-3 h-3" /> Editar Parecer
+                            </span>
                           </div>
                         ) : (
-                          <div className="bg-slate-50/60 p-2.5 rounded-xl border border-dashed border-slate-200 mb-3 text-[10px] text-slate-400">
-                            Sem parecer cadastrado ainda.
+                          <div
+                            onClick={() => handleOpenFeedbackEdit(student)}
+                            className="bg-slate-50/60 hover:bg-emerald-50/50 cursor-pointer p-2.5 rounded-xl border border-dashed border-slate-200 mb-3 text-[10px] text-slate-400 flex items-center justify-between transition-all"
+                            title="Clique para cadastrar parecer"
+                          >
+                            <span>Sem parecer cadastrado ainda.</span>
+                            <span className="text-emerald-700 font-bold flex items-center gap-1"><Edit3 className="w-3 h-3" /> Adicionar</span>
                           </div>
                         )}
                       </div>
 
                       {/* Card Bottom Actions */}
-                      <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+                      <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-1.5">
                         <button
                           onClick={() => setSelectedStudentForModal(student)}
-                          className="flex-1 py-1.5 px-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-xl text-xs font-bold border border-emerald-200 flex items-center justify-center gap-1.5 transition-all"
+                          className="flex-1 py-1.5 px-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-xl text-xs font-bold border border-emerald-200 flex items-center justify-center gap-1 transition-all"
+                          title="Ver respostas detalhadas e prova"
                         >
                           <Eye className="w-3.5 h-3.5" />
                           <span>{isDone ? 'Ver Prova' : 'Avaliar'}</span>
                         </button>
 
                         <button
-                          onClick={() => setSelectedStudentForModal(student)}
-                          title="Editar Parecer"
-                          className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-all"
+                          onClick={() => handleOpenFeedbackEdit(student)}
+                          title="Editar Parecer Pedagógico"
+                          className="py-1.5 px-2.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 rounded-xl text-xs font-semibold flex items-center gap-1 transition-all"
                         >
-                          <MessageSquare className="w-3.5 h-3.5" />
+                          <Edit3 className="w-3.5 h-3.5 text-amber-700" />
+                          <span>Parecer</span>
+                        </button>
+
+                        <button
+                          onClick={() => setStudentToExclude(student)}
+                          title="Excluir aluno da turma (não frequenta mais)"
+                          className="p-1.5 bg-slate-50 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-xl border border-slate-200 hover:border-rose-200 transition-all"
+                        >
+                          <UserX className="w-3.5 h-3.5" />
                         </button>
                       </div>
 
@@ -559,17 +715,47 @@ export const TeacherDashboard: React.FC = () => {
                               ) : '-'}
                             </td>
 
-                            <td className="py-3 px-4 max-w-xs truncate text-slate-600 italic">
-                              {feedback || '—'}
+                            <td className="py-3 px-4 max-w-xs text-slate-600">
+                              <div
+                                onClick={() => handleOpenFeedbackEdit(student)}
+                                className="cursor-pointer group flex items-start justify-between gap-2 p-1.5 -m-1.5 rounded-lg hover:bg-amber-50/70 transition-all"
+                                title="Clique para editar este parecer"
+                              >
+                                <span className="truncate italic text-[11px] block flex-1">
+                                  {feedback || '—'}
+                                </span>
+                                <Edit3 className="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-700 shrink-0 mt-0.5" />
+                              </div>
                             </td>
 
                             <td className="py-3 px-4 text-right">
-                              <button
-                                onClick={() => setSelectedStudentForModal(student)}
-                                className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-lg font-bold text-xs border border-emerald-200 transition-all"
-                              >
-                                Detalhes
-                              </button>
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  onClick={() => setSelectedStudentForModal(student)}
+                                  className="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-lg font-bold text-xs border border-emerald-200 transition-all flex items-center gap-1"
+                                  title="Ver respostas detalhadas e prova"
+                                >
+                                  <Eye className="w-3 h-3" />
+                                  <span>Detalhes</span>
+                                </button>
+
+                                <button
+                                  onClick={() => handleOpenFeedbackEdit(student)}
+                                  className="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 rounded-lg font-bold text-xs border border-amber-200 transition-all flex items-center gap-1"
+                                  title="Editar parecer pedagógico"
+                                >
+                                  <Edit3 className="w-3 h-3 text-amber-700" />
+                                  <span>Editar Parecer</span>
+                                </button>
+
+                                <button
+                                  onClick={() => setStudentToExclude(student)}
+                                  className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                                  title="Excluir aluno da turma (não frequenta mais)"
+                                >
+                                  <UserX className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         );
@@ -704,6 +890,174 @@ export const TeacherDashboard: React.FC = () => {
           submission={submissions[selectedStudentForModal.name]}
           onClose={() => setSelectedStudentForModal(null)}
         />
+      )}
+
+      {/* Quick Edit Feedback Modal */}
+      {editingFeedbackStudent && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-xl w-full shadow-2xl border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-emerald-900 to-teal-900 p-5 text-white flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {editingFeedbackStudent.photo ? (
+                  <img
+                    src={editingFeedbackStudent.photo}
+                    alt={editingFeedbackStudent.name}
+                    className="w-12 h-12 rounded-xl object-cover border-2 border-amber-400 shrink-0"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-xl bg-emerald-700 text-white flex items-center justify-center font-bold text-base border-2 border-emerald-400 shrink-0">
+                    {editingFeedbackStudent.name.slice(0, 2)}
+                  </div>
+                )}
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-400 text-slate-950 px-2 py-0.5 rounded-full inline-block mb-0.5">
+                    Editar Parecer do Professor
+                  </span>
+                  <h3 className="font-bold text-white text-base">
+                    {editingFeedbackStudent.name}
+                  </h3>
+                </div>
+              </div>
+              <button
+                onClick={() => setEditingFeedbackStudent(null)}
+                className="p-1.5 text-white/70 hover:text-white hover:bg-white/10 rounded-xl transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-5 space-y-4">
+              <div>
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center justify-between mb-2">
+                  <span className="flex items-center gap-1.5">
+                    <Edit3 className="w-3.5 h-3.5 text-emerald-600" />
+                    Texto do Parecer Pedagógico Individual:
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-normal">
+                    {feedbackEditText.length} caracteres
+                  </span>
+                </label>
+                <textarea
+                  rows={7}
+                  value={feedbackEditText}
+                  onChange={(e) => setFeedbackEditText(e.target.value)}
+                  placeholder="Escreva ou ajuste as observações sobre a atuação e competências do aluno..."
+                  className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all leading-relaxed"
+                />
+              </div>
+
+              {/* Quick Template helpers */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[10px] text-slate-400 font-bold">Atalhos:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const original = DEFAULT_PENDING_FEEDBACKS[editingFeedbackStudent.name];
+                    if (original) setFeedbackEditText(original);
+                  }}
+                  className="text-[10px] px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-lg transition-all font-semibold flex items-center gap-1"
+                >
+                  <RotateCcw className="w-3 h-3 text-amber-600" />
+                  <span>Restaurar Original</span>
+                </button>
+              </div>
+
+              {feedbackSavedNotice && (
+                <div className="p-2.5 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-xl flex items-center gap-2 animate-in fade-in">
+                  <Check className="w-4 h-4 text-emerald-600" />
+                  <span>Parecer pedagógico atualizado com sucesso!</span>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setEditingFeedbackStudent(null)}
+                className="px-4 py-2 text-slate-600 hover:text-slate-800 text-xs font-bold hover:bg-slate-200 rounded-xl transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveQuickFeedback}
+                className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-700/20 flex items-center gap-1.5 transition-all"
+              >
+                <Save className="w-3.5 h-3.5" />
+                <span>Salvar Parecer</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Student Exclusion Confirmation Modal */}
+      {studentToExclude && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-rose-200 overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="bg-rose-600 p-5 text-white flex items-center justify-between">
+              <div className="flex items-center gap-2 font-bold text-sm">
+                <AlertTriangle className="w-5 h-5 text-amber-300" />
+                <span>Excluir Aluno da Turma</span>
+              </div>
+              <button
+                onClick={() => setStudentToExclude(null)}
+                className="p-1 text-white/70 hover:text-white rounded-lg transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="flex items-center gap-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+                {studentToExclude.photo ? (
+                  <img src={studentToExclude.photo} alt={studentToExclude.name} className="w-12 h-12 rounded-xl object-cover border border-slate-300 shrink-0" />
+                ) : (
+                  <div className="w-12 h-12 rounded-xl bg-slate-600 text-white flex items-center justify-center font-bold text-sm shrink-0">
+                    {studentToExclude.name.slice(0, 2)}
+                  </div>
+                )}
+                <div>
+                  <h4 className="font-bold text-slate-900 text-sm">{studentToExclude.name}</h4>
+                  <span className="text-[11px] text-slate-500">PDG Cooperalfa</span>
+                </div>
+              </div>
+
+              <div className="text-xs text-slate-600 space-y-2 leading-relaxed">
+                <p>
+                  Tem certeza que deseja excluir <strong>{studentToExclude.name}</strong> da turma?
+                </p>
+                <p className="bg-amber-50 p-3 rounded-xl border border-amber-200 text-amber-900">
+                  <strong>Importante:</strong> Esta opção deve ser usada para alunos que <strong>não vêm mais</strong>, desistiram ou cancelaram a matrícula. O aluno não constará mais nos relatórios oficiais da coordenação nem na tela de login.
+                </p>
+                <p className="text-[11px] text-slate-400">
+                  * Você poderá restaurar este aluno posteriormente a qualquer momento no painel.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setStudentToExclude(null)}
+                className="px-4 py-2 text-slate-600 hover:text-slate-800 text-xs font-bold hover:bg-slate-200 rounded-xl transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmExclude}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-md shadow-rose-700/20 flex items-center gap-1.5 transition-all"
+              >
+                <UserX className="w-3.5 h-3.5" />
+                <span>Sim, Excluir Aluno</span>
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
     </div>

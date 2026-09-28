@@ -15,19 +15,19 @@ import {
 } from 'lucide-react';
 
 export const StudentLogin: React.FC = () => {
-  const { startTest, submissions, setCurrentView, setCurrentStudent } = useExam();
+  const { startTest, submissions, setCurrentView, setCurrentStudent, students } = useExam();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [customName, setCustomName] = useState('');
   const [isCustomMode, setIsCustomMode] = useState(false);
 
-  // Filter student list
+  // Filter active student list (excluded/dropped students will not appear)
   const filteredStudents = useMemo(() => {
-    if (!searchTerm.trim()) return STUDENTS_LIST;
-    return STUDENTS_LIST.filter(s => 
+    if (!searchTerm.trim()) return students;
+    return students.filter(s => 
       s.name.toLowerCase().includes(searchTerm.toLowerCase().trim())
     );
-  }, [searchTerm]);
+  }, [searchTerm, students]);
 
   const handleSelectStudent = (student: Student) => {
     setSelectedStudent(student);

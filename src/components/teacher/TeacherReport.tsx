@@ -15,10 +15,11 @@ import {
 } from 'lucide-react';
 
 export const TeacherReport: React.FC = () => {
-  const { submissions, teacherFeedbacks, setCurrentView } = useExam();
+  const { submissions, teacherFeedbacks, setCurrentView, students, excludedStudents } = useExam();
 
-  const totalStudents = STUDENTS_LIST.length;
-  const completedList = Object.values(submissions).filter(s => s.status === 'concluido');
+  const totalStudents = students.length;
+  const activeStudentNames = new Set(students.map(s => s.name));
+  const completedList = Object.values(submissions).filter(s => s.status === 'concluido' && activeStudentNames.has(s.studentName));
   const completedCount = completedList.length;
 
   const averageGrade = completedCount > 0 
@@ -217,7 +218,7 @@ export const TeacherReport: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
-                {STUDENTS_LIST.map((student, idx) => {
+                {students.map((student, idx) => {
                   const sub = submissions[student.name];
                   const feedback = sub?.teacherFeedback || teacherFeedbacks[student.name] || DEFAULT_PENDING_FEEDBACKS[student.name] || 'Participação ativa no módulo; bom domínio dos conceitos de balcão.';
 
@@ -269,6 +270,11 @@ export const TeacherReport: React.FC = () => {
                 })}
               </tbody>
             </table>
+            {excludedStudents.length > 0 && (
+              <div className="bg-slate-50 px-4 py-2.5 border-t border-slate-200 text-[10px] text-slate-500 italic">
+                * Nota: {excludedStudents.length} aluno(s) desvinculado(s)/desistente(s) da turma ({excludedStudents.map(e => e.name).join(', ')}) foram formalmente excluídos e não constam nesta ata oficial de notas.
+              </div>
+            )}
           </div>
         </div>
 

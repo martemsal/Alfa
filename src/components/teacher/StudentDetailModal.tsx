@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useExam } from '../../context/ExamContext';
 import { QUESTIONS, EXAM_METADATA } from '../../data/examData';
+import { DEFAULT_PENDING_FEEDBACKS } from '../../data/officialSubmissions';
 import { Student, ExamSubmission } from '../../types';
 import { 
   X, 
@@ -13,7 +14,10 @@ import {
   BookOpen, 
   User, 
   Trash2,
-  Check
+  Check,
+  UserX,
+  RotateCcw,
+  AlertTriangle
 } from 'lucide-react';
 
 interface StudentDetailModalProps {
@@ -27,12 +31,14 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
   submission,
   onClose
 }) => {
-  const { updateTeacherFeedback, deleteSubmission, teacherFeedbacks } = useExam();
+  const { updateTeacherFeedback, deleteSubmission, teacherFeedbacks, excludeStudent } = useExam();
 
+  const originalTemplate = DEFAULT_PENDING_FEEDBACKS[student.name] || '';
   const [feedbackText, setFeedbackText] = useState(
-    submission?.teacherFeedback || teacherFeedbacks[student.name] || ''
+    submission?.teacherFeedback || teacherFeedbacks[student.name] || originalTemplate
   );
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [confirmingExclude, setConfirmingExclude] = useState(false);
 
   const handleSaveFeedback = () => {
     updateTeacherFeedback(student.name, feedbackText);
@@ -41,10 +47,15 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
   };
 
   const handleDelete = () => {
-    if (confirm(`Deseja realmente apagar a prova de ${student.name}?`)) {
+    if (confirm(`Deseja realmente apagar a prova de ${student.name}? O aluno permanecerá matriculado na turma, mas sua nota será zerada.`)) {
       deleteSubmission(student.name);
       onClose();
     }
+  };
+
+  const handleExcludeStudent = () => {
+    excludeStudent(student.name);
+    onClose();
   };
 
   return (
@@ -177,6 +188,17 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
               >
                 + Postura Empática
               </button>
+
+              {originalTemplate && feedbackText !== originalTemplate && (
+                <button
+                  type="button"
+                  onClick={() => setFeedbackText(originalTemplate)}
+                  className="text-[10px] px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-lg transition-all flex items-center gap-1 font-semibold"
+                >
+                  <RotateCcw className="w-3 h-3 text-amber-600" />
+                  <span>Restaurar Parecer Original</span>
+                </button>
+              )}
             </div>
 
             <div className="pt-2 flex justify-end">
@@ -256,24 +278,66 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-4 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
-          {submission ? (
-            <button
-              onClick={handleDelete}
-              className="flex items-center gap-1 text-xs font-semibold text-rose-600 hover:text-rose-700 px-3 py-1.5 rounded-lg hover:bg-rose-50 transition-all"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span>Limpar Prova Deste Aluno</span>
-            </button>
-          ) : <div />}
+        {confirmingExclude ? (
+          <div className="p-4 bg-rose-50 border-t border-rose-200 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+            <div className="flex items-center gap-2 text-rose-900 text-xs">
+              <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0" />
+              <span>
+                <strong>Confirma a exclusão de {student.name}?</strong> Use para alunos que não vêm mais / desistiram. O aluno será retirado da turma e dos relatórios.
+              </span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setConfirmingExclude(false)}
+                className="px-3 py-1.5 bg-white text-slate-700 hover:bg-slate-100 rounded-lg text-xs font-semibold border border-slate-300 transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleExcludeStudent}
+                className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shadow-sm transition-all flex items-center gap-1.5"
+              >
+                <UserX className="w-3.5 h-3.5" />
+                <span>Sim, Excluir da Turma</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="p-4 bg-white border-t border-slate-200 flex flex-wrap items-center justify-between gap-2 shrink-0">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmingExclude(true)}
+                className="flex items-center gap-1.5 text-xs font-bold text-rose-700 hover:text-white bg-rose-50 hover:bg-rose-600 px-3 py-1.5 rounded-xl border border-rose-200 transition-all"
+                title="Excluir aluno que não frequenta mais a turma"
+              >
+                <UserX className="w-3.5 h-3.5" />
+                <span>Excluir Aluno da Turma</span>
+              </button>
 
-          <button
-            onClick={onClose}
-            className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition-all"
-          >
-            Fechar
-          </button>
-        </div>
+              {submission && (
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  className="flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-rose-600 px-2.5 py-1.5 rounded-xl hover:bg-slate-100 transition-all"
+                  title="Zerar apenas a prova deste aluno"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Limpar Prova</span>
+                </button>
+              )}
+            </div>
+
+            <button
+              onClick={onClose}
+              className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition-all"
+            >
+              Fechar
+            </button>
+          </div>
+        )}
 
       </div>
     </div>
